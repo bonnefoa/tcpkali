@@ -794,6 +794,11 @@ set_socket_options(int fd, struct loop_arguments *largs) {
     int on = ~0;
     int rc = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
     assert(rc != -1);
+
+    on = 1;
+    rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+    assert(rc != -1);
+
     if(largs->params.nagle_setting != NSET_UNSET) {
         int v = largs->params.nagle_setting;
         rc = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &v, sizeof(v));
