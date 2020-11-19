@@ -458,7 +458,7 @@ open_connections_until_maxed_out(enum work_phase phase, struct oc_args *args,
              * and sent separately.
              */
             report_to_statsd(args->statsd, &feedback, 0, 0);
-            report_to_stats_csv(args->stats_csv_file, &feedback);
+            report_to_stats_csv(args->stats_csv_file, &feedback, now);
 
             if(every(args->latency_window, now,
                      &args->checkpoint.last_latency_window_flush)) {
@@ -477,7 +477,7 @@ open_connections_until_maxed_out(enum work_phase phase, struct oc_args *args,
             feedback.latency = latency;
             report_to_statsd(args->statsd, &feedback, requested_latency_types,
                              args->latency_percentiles);
-            report_to_stats_csv(args->stats_csv_file, &feedback);
+            report_to_stats_csv(args->stats_csv_file, &feedback, now);
         }
 
         if(args->print_stats) {

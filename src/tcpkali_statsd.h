@@ -55,7 +55,7 @@ void report_latency_to_statsd(Statsd *statsd, struct latency_snapshot *,
                       const struct percentile_values *latency_percentiles);
 
 void
-report_to_stats_csv(FILE *stats_csv, statsd_feedback *sf);
+report_to_stats_csv(FILE *stats_csv, statsd_feedback *sf, int current_ts);
 
 
 #endif /* TCPKALI_STATSD_H */
