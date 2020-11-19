@@ -140,8 +140,6 @@ report_to_statsd(Statsd *statsd, statsd_feedback *sf, statsd_report_latency_type
     statsd_sendBatch(statsd);
 }
 
-int last_csv_timestamp = 0;
-statsd_feedback statsd_buffer = {};
 void
 report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
     if(!stats_csv_file) return;
@@ -150,45 +148,19 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
         sf = &empty_feedback;
     }
 
-    if (current_ts == last_csv_timestamp) {
-        statsd_buffer.opened += sf->opened;
-        statsd_buffer.conns_in = sf->conns_in;
-        statsd_buffer.conns_out = sf->conns_out;
-        statsd_buffer.traffic_delta.bytes_rcvd += sf->traffic_delta.bytes_rcvd;
-        statsd_buffer.traffic_delta.bytes_sent += sf->traffic_delta.bytes_sent;
-        statsd_buffer.traffic_delta.num_reads += sf->traffic_delta.num_reads;
-        statsd_buffer.traffic_delta.num_writes += sf->traffic_delta.num_writes;
-        statsd_buffer.traffic_delta.msgs_rcvd += sf->traffic_delta.msgs_rcvd;
-        statsd_buffer.traffic_delta.msgs_sent += sf->traffic_delta.msgs_sent;
-        statsd_buffer.latency = sf->latency;
-        return;
-    }
-    last_csv_timestamp = current_ts;
-
     double connect_p95 = 0;
-    if (statsd_buffer.latency && statsd_buffer.latency->connect_histogram) {
-        connect_p95 = hdr_value_at_percentile(statsd_buffer.latency->connect_histogram, 95.0) / 10.0;
+    if (sf->latency && sf->latency->connect_histogram) {
+        connect_p95 = hdr_value_at_percentile(sf->latency->connect_histogram, 95.0) / 10.0;
     }
 
     fprintf(stats_csv_file, "%d,%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f\n",
             current_ts,
-            statsd_buffer.opened, statsd_buffer.conns_in, statsd_buffer.conns_out,
-            statsd_buffer.bps_in, statsd_buffer.bps_out,
-            statsd_buffer.traffic_delta.bytes_rcvd, statsd_buffer.traffic_delta.bytes_sent,
-            statsd_buffer.traffic_delta.num_reads, statsd_buffer.traffic_delta.num_writes,
-            statsd_buffer.traffic_delta.msgs_rcvd, statsd_buffer.traffic_delta.msgs_sent,
+            sf->opened, sf->conns_in, sf->conns_out,
+            sf->bps_in, sf->bps_out,
+            sf->traffic_delta.bytes_rcvd, sf->traffic_delta.bytes_sent,
+            sf->traffic_delta.num_reads, sf->traffic_delta.num_writes,
+            sf->traffic_delta.msgs_rcvd, sf->traffic_delta.msgs_sent,
             connect_p95);
-
-    statsd_buffer.opened = 0;
-    statsd_buffer.conns_in = 0;
-    statsd_buffer.conns_out = 0;
-    statsd_buffer.traffic_delta.bytes_rcvd = 0;
-    statsd_buffer.traffic_delta.bytes_sent = 0;
-    statsd_buffer.traffic_delta.num_reads = 0;
-    statsd_buffer.traffic_delta.num_writes = 0;
-    statsd_buffer.traffic_delta.msgs_rcvd = 0;
-    statsd_buffer.traffic_delta.msgs_sent = 0;
-    statsd_buffer.latency = NULL;
 }
 
 void
