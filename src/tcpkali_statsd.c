@@ -141,6 +141,28 @@ report_to_statsd(Statsd *statsd, statsd_feedback *sf, statsd_report_latency_type
 }
 
 void
+report_to_stats_csv(FILE *stats_csv, statsd_feedback *sf) {
+    if(!stats_csv) return;
+    if(!sf) {
+        static statsd_feedback empty_feedback;
+        sf = &empty_feedback;
+    }
+
+    double connect_p95 = 0;
+    if (sf->latency) {
+        connect_p95 = hdr_value_at_percentile(sf->latency->connect_histogram, 95.0); ;
+    }
+
+    fprintf(stats_csv, "%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f",
+            sf->opened, sf->conns_in, sf->conns_out,
+            sf->bps_in, sf->bps_out,
+            sf->traffic_delta.bytes_rcvd, sf->traffic_delta.bytes_sent,
+            sf->traffic_delta.num_reads, sf->traffic_delta.num_writes,
+            sf->traffic_delta.msgs_rcvd, sf->traffic_delta.msgs_sent,
+            connect_p95);
+}
+
+void
 report_latency_to_statsd(Statsd *statsd, struct latency_snapshot *latency, statsd_report_latency_types latency_types, const struct percentile_values *latency_percentiles) {
     if(!statsd) return;
 

@@ -90,6 +90,7 @@ struct oc_args {
     mavg traffic_mavgs[2];
     mavg count_mavgs[2];    /* --message-marker */
     size_t connections_opened_tally;
+    FILE *stats_csv_file;
     Statsd *statsd;
     struct rate_modulator *rate_modulator;
     struct percentile_values *latency_percentiles;

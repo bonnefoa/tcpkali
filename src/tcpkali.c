@@ -70,6 +70,7 @@
 #define CLI_LATENCY (1 << 13)
 #define CLI_DUMP (1 << 14)
 #define SSL_OPT (1 << 15)
+#define CLI_CSV (1 << 16)
 static struct option cli_long_options[] = {
     {"channel-lifetime", 1, 0, CLI_CHAN_OFFSET + 't'},
     {"channel-bandwidth-upstream", 1, 0, 'U'},
@@ -108,6 +109,7 @@ static struct option cli_long_options[] = {
     {"ssl", 0, 0, SSL_OPT},
     {"ssl-cert", 1, 0, SSL_OPT + 'c'},
     {"ssl-key", 1, 0, SSL_OPT + 'k'},
+    {"stats-csv", 1, 0, CLI_CSV + 's'},
     {"statsd", 0, 0, CLI_STATSD_OFFSET + 'e'},
     {"statsd-host", 1, 0, CLI_STATSD_OFFSET + 'h'},
     {"statsd-port", 1, 0, CLI_STATSD_OFFSET + 'p'},
@@ -128,6 +130,7 @@ static struct tcpkali_config {
     double connect_rate;  /* New connects per second. */
     double test_duration; /* Seconds for the full test. */
     double latency_window;  /* Seconds */
+    char *stats_csv;
     int statsd_enable;
     char *statsd_host;
     int statsd_port;
@@ -562,6 +565,9 @@ main(int argc, char **argv) {
             }
             engine_params.sock_sndbuf_size = size;
         } break;
+        case CLI_CSV + 's':
+            conf.stats_csv = strdup(optarg);
+            break;
         case CLI_STATSD_OFFSET + 'e':
             conf.statsd_enable = 1;
             break;
@@ -1066,6 +1072,12 @@ main(int argc, char **argv) {
         statsd = 0;
     }
 
+    FILE *stats_csv_file = NULL;
+    if(conf.stats_csv) {
+        stats_csv_file = fopen(conf.stats_csv,"w");
+        assert(stats_csv_file);
+    }
+
     if(print_stats) {
         /* Stop flashing cursor in the middle of status reporting. */
         tcpkali_disable_cursor();
@@ -1086,6 +1098,7 @@ main(int argc, char **argv) {
         .max_connections = conf.max_connections,
         .connect_rate = conf.connect_rate,
         .latency_window = conf.latency_window,
+        .stats_csv_file = stats_csv_file,
         .statsd = statsd,
         .rate_modulator = &rate_modulator,
         .latency_percentiles = &latency_percentiles,
@@ -1147,6 +1160,7 @@ main(int argc, char **argv) {
 
     /* Send zeroes, otherwise graphs would continue showing non-zeroes... */
     report_to_statsd(statsd, 0, requested_latency_types, &latency_percentiles);
+    fclose(stats_csv_file);
 
     switch(orv) {
     case OC_CONNECTED:
