@@ -453,6 +453,7 @@ open_connections_until_maxed_out(enum work_phase phase, struct oc_args *args,
                                     .bps_out = bps_out,
                                     .traffic_delta = traffic_delta,
                                     .latency = NULL};
+        args->connections_opened_tally_aggregated += args->connections_opened_tally;
         args->connections_opened_tally = 0;
 
         if(requested_latency_types && args->latency_window) {
@@ -472,6 +473,8 @@ open_connections_until_maxed_out(enum work_phase phase, struct oc_args *args,
                 report_latency_to_statsd(args->statsd, diff,
                     requested_latency_types, args->latency_percentiles);
 
+                feedback.opened = args->connections_opened_tally_aggregated;
+                args->connections_opened_tally_aggregated = 0;
                 feedback.latency = diff;
                 report_to_stats_csv(args->stats_csv_file, &feedback, now);
 
