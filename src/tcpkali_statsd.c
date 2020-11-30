@@ -141,6 +141,8 @@ report_to_statsd(Statsd *statsd, statsd_feedback *sf, statsd_report_latency_type
 }
 
 int start_ts = 0;
+size_t previous_failures = 0;
+size_t previous_timeouts = 0;
 void
 report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
     if(!stats_csv_file) return;
@@ -157,10 +159,15 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
         connect_p95 = hdr_value_at_percentile(sf->latency->connect_histogram, 95.0) / 10.0;
     }
 
+    size_t delta_failures = sf->conns_failure - previous_failures;
+    size_t delta_timeouts = sf->conns_timeout - previous_timeouts;
+    previous_failures = sf->conns_failure;
+    previous_timeouts = sf->conns_timeout;
+
     fprintf(stats_csv_file, "%d,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f\n",
             current_ts - start_ts,
             sf->opened, sf->conns_in, sf->conns_out,
-            sf->conns_failure, sf->conns_timeout,
+            delta_failures, delta_timeouts,
             sf->bps_in, sf->bps_out,
             sf->traffic_delta.bytes_rcvd, sf->traffic_delta.bytes_sent,
             sf->traffic_delta.num_reads, sf->traffic_delta.num_writes,
