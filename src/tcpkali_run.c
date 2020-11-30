@@ -400,9 +400,10 @@ open_connections_until_maxed_out(enum work_phase phase, struct oc_args *args,
         now = tk_now(TK_DEFAULT);
 
 
-        size_t connecting, conns_in, conns_out, conns_counter;
-        engine_get_connection_stats(args->eng, &connecting, &conns_in, &conns_out,
-                                    &conns_counter);
+        size_t connecting, conns_in, conns_out, conns_failure, conns_timeout, conns_counter;
+        engine_get_connection_stats(args->eng, &connecting,
+                &conns_in, &conns_out,
+                &conns_failure, &conns_timeout, &conns_counter);
         conn_deficit = args->max_connections - (connecting + conns_out);
 
         size_t allowed = pacefier_allow(&keepup_pace, now);
@@ -446,6 +447,8 @@ open_connections_until_maxed_out(enum work_phase phase, struct oc_args *args,
         statsd_feedback feedback = {.opened = args->connections_opened_tally,
                                     .conns_in = conns_in,
                                     .conns_out = conns_out,
+                                    .conns_failure = conns_failure,
+                                    .conns_timeout = conns_timeout,
                                     .bps_in = bps_in,
                                     .bps_out = bps_out,
                                     .traffic_delta = traffic_delta,

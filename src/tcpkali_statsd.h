@@ -40,6 +40,8 @@ typedef struct {
     size_t opened;
     size_t conns_in;
     size_t conns_out;
+    size_t conns_failure;
+    size_t conns_timeout;
     size_t bps_in;
     size_t bps_out;
     non_atomic_traffic_stats traffic_delta;

@@ -157,9 +157,10 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
         connect_p95 = hdr_value_at_percentile(sf->latency->connect_histogram, 95.0) / 10.0;
     }
 
-    fprintf(stats_csv_file, "%d,%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f\n",
+    fprintf(stats_csv_file, "%d,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f\n",
             current_ts - start_ts,
             sf->opened, sf->conns_in, sf->conns_out,
+            sf->conns_failure, sf->conns_timeout,
             sf->bps_in, sf->bps_out,
             sf->traffic_delta.bytes_rcvd, sf->traffic_delta.bytes_sent,
             sf->traffic_delta.num_reads, sf->traffic_delta.num_writes,

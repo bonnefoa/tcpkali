@@ -107,6 +107,7 @@ rate_spec_t engine_update_send_rate(struct engine *, double multiplier);
  */
 void engine_get_connection_stats(struct engine *, size_t *connecting,
                                  size_t *incoming, size_t *outgoing,
+                                 size_t *failure, size_t *timeout,
                                  size_t *counter);
 
 /*

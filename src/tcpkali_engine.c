@@ -145,6 +145,9 @@ struct loop_arguments {
     atomic_narrow_t incoming_established;
     atomic_narrow_t connections_counter;
 
+    atomic_narrow_t connection_failures;
+    atomic_narrow_t connection_timeouts;
+
     /* Avoid mixing output from several threads when dumping complex state */
     pthread_mutex_t *serialize_output_lock;
 };
@@ -494,10 +497,10 @@ void
 engine_terminate(struct engine *eng, double epoch,
                  non_atomic_traffic_stats initial_traffic_stats,
                  struct percentile_values *latency_percentiles) {
-    size_t connecting, conn_in, conn_out, conn_counter;
+    size_t connecting, conn_in, conn_out, conn_failure, conn_timeout, conn_counter;
 
     engine_get_connection_stats(eng, &connecting, &conn_in, &conn_out,
-                                &conn_counter);
+            &conn_failure, &conn_timeout, &conn_counter);
 
     /*
      * Terminate all workers.
@@ -585,10 +588,13 @@ express_bytes(size_t bytes, char *buf, size_t size) {
 void
 engine_get_connection_stats(struct engine *eng, size_t *connecting,
                             size_t *incoming, size_t *outgoing,
+                            size_t *failure, size_t *timeout,
                             size_t *counter) {
     size_t c_conn = 0;
     size_t c_in = 0;
     size_t c_out = 0;
+    size_t c_failure = 0;
+    size_t c_timeout = 0;
     size_t c_count = 0;
 
     for(int n = 0; n < eng->n_workers; n++) {
@@ -596,11 +602,15 @@ engine_get_connection_stats(struct engine *eng, size_t *connecting,
         c_out += atomic_get(&eng->loops[n].outgoing_established);
         c_in += atomic_get(&eng->loops[n].incoming_established);
         c_count += atomic_get(&eng->loops[n].connections_counter);
+        c_failure += atomic_get(&eng->loops[n].connection_failures);
+        c_timeout += atomic_get(&eng->loops[n].connection_timeouts);
     }
     *connecting = c_conn;
     *incoming = c_in;
     *outgoing = c_out;
     *counter = c_count;
+    *failure = c_failure;
+    *timeout = c_timeout;
 }
 
 void
@@ -1381,6 +1391,7 @@ static void start_new_connection(TK_P) {
         if(rc == -1) {
             atomic_increment(&remote_stats->connection_failures);
             largs->worker_connection_failures++;
+            atomic_increment(&largs->connection_failures);
             close(sockfd);
             DEBUG(DBG_WARNING, "Connection to %s is not done: %s\n",
                   format_sockaddr(ss, tmpbuf, sizeof(tmpbuf)), strerror(errno));
@@ -1398,6 +1409,7 @@ static void start_new_connection(TK_P) {
             if(largs->params.source_addresses.n_addrs) {
                 /* This is local problem, not remote address problem. */
                 largs->worker_connection_failures++;
+                atomic_increment(&largs->connection_failures);
                 DEBUG(DBG_WARNING, "Connection to %s is not done: %s\n",
                       format_sockaddr(ss, tmpbuf, sizeof(tmpbuf)),
                       strerror(errno));
@@ -1406,6 +1418,7 @@ static void start_new_connection(TK_P) {
         default:
             atomic_increment(&remote_stats->connection_failures);
             largs->worker_connection_failures++;
+            atomic_increment(&largs->connection_failures);
             if(atomic_get(&remote_stats->connection_failures) == 1) {
                 DEBUG(DBG_WARNING, "Connection to %s is not done: %s\n",
                       format_sockaddr(ss, tmpbuf, sizeof(tmpbuf)),
@@ -2896,6 +2909,7 @@ close_connection(TK_P_ struct connection *conn,
             break;
         }
         largs->worker_connection_failures++;
+        atomic_increment(&largs->connection_failures);
         break;
     case CCR_TIMEOUT:
         assert(conn->conn_type == CONN_OUTGOING);
@@ -2906,7 +2920,9 @@ close_connection(TK_P_ struct connection *conn,
                   buf, sizeof(buf)),
               strerror(errno));
         largs->worker_connection_failures++;
+        atomic_increment(&largs->connection_failures);
         largs->worker_connection_timeouts++;
+        atomic_increment(&largs->connection_timeouts);
         break;
     }
 
