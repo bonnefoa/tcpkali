@@ -473,9 +473,16 @@ open_connections_until_maxed_out(enum work_phase phase, struct oc_args *args,
                 report_latency_to_statsd(args->statsd, diff,
                     requested_latency_types, args->latency_percentiles);
 
+                non_atomic_traffic_stats _last_statsd = args->checkpoint.last_statsd_traffic_stats;
+                args->checkpoint.last_statsd_traffic_stats = engine_traffic(args->eng);
+                non_atomic_traffic_stats traffic_delta =
+                    subtract_traffic_stats(args->checkpoint.last_statsd_traffic_stats, _last_statsd);
+
                 feedback.opened = args->connections_opened_tally_aggregated;
                 args->connections_opened_tally_aggregated = 0;
                 feedback.latency = diff;
+                feedback.traffic_delta = traffic_delta;
+
                 report_to_stats_csv(args->stats_csv_file, &feedback, now);
 
                 engine_free_latency_snapshot(diff);

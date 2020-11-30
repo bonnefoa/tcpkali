@@ -85,6 +85,7 @@ struct oc_args {
         double last_latency_window_flush;   /* Last time we flushed statsd latencies */
         non_atomic_traffic_stats initial_traffic_stats; /* Ramp-up phase traffic */
         non_atomic_traffic_stats last_traffic_stats;
+        non_atomic_traffic_stats last_statsd_traffic_stats;
     } checkpoint;
     struct latency_snapshot *previous_window_latency;
     mavg traffic_mavgs[2];
