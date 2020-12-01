@@ -141,6 +141,7 @@ report_to_statsd(Statsd *statsd, statsd_feedback *sf, statsd_report_latency_type
 }
 
 int start_ts = 0;
+int last_ts = 0;
 size_t previous_failures = 0;
 size_t previous_timeouts = 0;
 void
@@ -152,7 +153,10 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
     }
     if (start_ts == 0) {
         start_ts = current_ts;
+        last_ts = current_ts;
     }
+    assert(current_ts - last_ts < 2);
+    last_ts = current_ts;
 
     double connect_p95 = 0;
     if (sf->latency && sf->latency->connect_histogram) {
@@ -163,8 +167,10 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
     size_t delta_timeouts = sf->conns_timeout - previous_timeouts;
     previous_failures = sf->conns_failure;
     previous_timeouts = sf->conns_timeout;
+    double loadavg[1];
+    getloadavg(loadavg, 1);
 
-    fprintf(stats_csv_file, "%d,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f\n",
+    fprintf(stats_csv_file, "%d,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f,%.2f\n",
             current_ts - start_ts,
             sf->opened, sf->conns_in, sf->conns_out,
             delta_failures, delta_timeouts,
@@ -172,7 +178,7 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
             sf->traffic_delta.bytes_rcvd, sf->traffic_delta.bytes_sent,
             sf->traffic_delta.num_reads, sf->traffic_delta.num_writes,
             sf->traffic_delta.msgs_rcvd, sf->traffic_delta.msgs_sent,
-            connect_p95);
+            connect_p95, loadavg[0]);
 }
 
 void
