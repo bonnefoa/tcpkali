@@ -141,7 +141,6 @@ report_to_statsd(Statsd *statsd, statsd_feedback *sf, statsd_report_latency_type
 }
 
 int start_ts = 0;
-int last_ts = 0;
 size_t previous_failures = 0;
 size_t previous_timeouts = 0;
 void
@@ -153,10 +152,7 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
     }
     if (start_ts == 0) {
         start_ts = current_ts;
-        last_ts = current_ts;
     }
-    assert(current_ts - last_ts < 2);
-    last_ts = current_ts;
 
     double connect_p95 = 0;
     if (sf->latency && sf->latency->connect_histogram) {
