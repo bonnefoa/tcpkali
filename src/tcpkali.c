@@ -1076,7 +1076,7 @@ main(int argc, char **argv) {
     if(conf.stats_csv) {
         stats_csv_file = fopen(conf.stats_csv,"w");
         assert(stats_csv_file);
-        fprintf(stats_csv_file, "time,connections.opened,connections.total.in,connections.total.out,connections.total.failures,connections.total.timeouts,traffic.bitrate.in,traffic.bitrate.out,traffic.data.rcvd,traffic.data.sent,traffic.data.reads,traffic.data.writes,traffic.msgs.rcvd,traffic.msgs.sent,ms_connect_p95\n");
+        fprintf(stats_csv_file, "time,connections.opened,connections.total.in,connections.total.out,connections.total.failures,connections.total.timeouts,traffic.bitrate.in,traffic.bitrate.out,traffic.data.rcvd,traffic.data.sent,traffic.data.reads,traffic.data.writes,traffic.msgs.rcvd,traffic.msgs.sent,ms_connect_p95,load_avg\n");
     }
 
     if(print_stats) {

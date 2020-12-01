@@ -198,4 +198,3 @@ report_latency_to_statsd(Statsd *statsd, struct latency_snapshot *latency, stats
 
     statsd_sendBatch(statsd);
 }
-
