@@ -1161,7 +1161,9 @@ main(int argc, char **argv) {
 
     /* Send zeroes, otherwise graphs would continue showing non-zeroes... */
     report_to_statsd(statsd, 0, requested_latency_types, &latency_percentiles);
-    fclose(stats_csv_file);
+    if (stats_csv_file) {
+        fclose(stats_csv_file);
+    }
 
     switch(orv) {
     case OC_CONNECTED:
