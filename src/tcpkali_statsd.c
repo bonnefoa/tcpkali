@@ -140,7 +140,6 @@ report_to_statsd(Statsd *statsd, statsd_feedback *sf, statsd_report_latency_type
     statsd_sendBatch(statsd);
 }
 
-int start_ts = 0;
 size_t previous_failures = 0;
 size_t previous_timeouts = 0;
 void
@@ -149,9 +148,6 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
     if(!sf) {
         static statsd_feedback empty_feedback;
         sf = &empty_feedback;
-    }
-    if (start_ts == 0) {
-        start_ts = current_ts;
     }
 
     double connect_p95 = 0;
@@ -167,7 +163,7 @@ report_to_stats_csv(FILE *stats_csv_file, statsd_feedback *sf, int current_ts) {
     getloadavg(loadavg, 1);
 
     fprintf(stats_csv_file, "%d,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%llu,%llu,%llu,%llu,%llu,%llu,%.1f,%.2f\n",
-            current_ts - start_ts,
+            current_ts,
             sf->opened, sf->conns_in, sf->conns_out,
             delta_failures, delta_timeouts,
             sf->bps_in, sf->bps_out,
